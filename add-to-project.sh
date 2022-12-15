@@ -84,10 +84,22 @@ search="$search -project:$org_or_user/$project_number"
 # get the issues and node_ids out the results at 'items[].node_id' and split on whitespace in result
 result=$(gh api -X GET search/issues -f q="$search" | jq -r '.items[].node_id')
 
-# for every node_id in the result, add it to the project
+# exit if result is empty
+if [ -z "$result" ]; then
+  echo "No results found"
+  exit 1
+fi
+
+# create template for graphql query from node_id
+mutations=""
+counter=0
 for node_id in $result; do
-  title=$(gh api graphql -f query='mutation($content_id: ID!, $project_id: ID!) {
-    addProjectV2ItemById(input: {contentId: $content_id, projectId: $project_id}) {
+  # increment counter
+  counter=$((counter+1))
+  # crate alias for mutation based on counter as string
+  alias_node_id="mutation_$counter"
+  mutations+=$(cat <<EOF
+    $alias_node_id: addProjectV2ItemById(input: {contentId: "$node_id", projectId: "$project_id"}) {
       clientMutationId 
       item {
         content {
@@ -100,7 +112,15 @@ for node_id in $result; do
         }
       }
     }
-  }' -F project_id="$project_id" -F content_id="$node_id" | jq -r '.data.addProjectV2ItemById.item.content.title')
-  echo "Added $title to project"
-  sleep 1
+EOF
+)
 done
+
+result=$(gh api graphql -f query="mutation { $mutations }")
+
+
+titles=$(echo "$result" | jq -r '.data | to_entries[] | .value.item.content.title')
+
+# every title is on a new line 
+# print it surrounded with quotes and with "Added " prefixed
+echo "$titles" | sed 's/^/"/' | sed 's/$/"/' | sed 's/^/Added /'
