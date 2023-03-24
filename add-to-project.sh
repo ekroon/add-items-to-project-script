@@ -46,25 +46,27 @@ if [ -z "$search" ]; then
   exit 1
 fi
 
-user_query='
-query($login: String!, $project_number: Int!) {
-  user(login: $login) {
-    projectV2(number: $project_number) {
+user_query=$(cat <<EOF
+query(\$login: String!, \$project_number: Int!) {
+  user(login: \$login) {
+    projectV2(number: \$project_number) {
       id
     }
   }
 }
-'
+EOF
+)
 
-organization_query='
-query($login: String!, $project_number: Int!) {
-  organization(login: $login) {
-    projectV2(number: $project_number) {
+organization_query=$(cat <<EOF
+query(\$login: String!, \$project_number: Int!) {
+  organization(login: \$login) {
+    projectV2(number: \$project_number) {
       id
     }
   }
 }
-'
+EOF
+)
 
 project_id=$(gh api graphql -F login="$org_or_user" -F project_number="$project_number" -f query="$user_query" 2> /dev/null | jq -r '.data.user.projectV2.id')
 
