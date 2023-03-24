@@ -83,46 +83,57 @@ fi
 # add -project to $search query
 search="$search -project:$org_or_user/$project_number"
 
-# get the issues and node_ids out the results at 'items[].node_id' and split on whitespace in result
-result=$(gh api -X GET search/issues -f q="$search" | jq -r '.items[].node_id')
+# add var to keep track of number of issues added
+added=0
 
-# exit if result is empty
-if [ -z "$result" ]; then
-  echo "No results found"
-  exit 1
-fi
+while true; do
+  # get the issues and node_ids out the results at 'items[].node_id' and split on whitespace in result
+  result=$(gh api -X GET search/issues -f q="$search" | jq -r '.items[].node_id')
 
-# create template for graphql query from node_id
-mutations=""
-counter=0
-for node_id in $result; do
-  # increment counter
-  counter=$((counter+1))
-  # crate alias for mutation based on counter as string
-  alias_node_id="mutation_$counter"
-  mutations+=$(cat <<EOF
-    $alias_node_id: addProjectV2ItemById(input: {contentId: "$node_id", projectId: "$project_id"}) {
-      clientMutationId 
-      item {
-        content {
-          ... on Issue {
-            title
-          }
-          ... on PullRequest {
-            title
+  # exit if result is empty
+  if [ -z "$result" ]; then
+    if [ "$added" -eq 0 ]; then
+      echo "No results found"
+    else
+      echo "Added $added issues"
+    fi
+    exit 1
+  fi
+
+  # create template for graphql query from node_id
+  mutations=""
+  counter=0
+  for node_id in $result; do
+    # increment counter
+    counter=$((counter+1))
+    # crate alias for mutation based on counter as string
+    alias_node_id="mutation_$counter"
+    mutations+=$(cat <<EOF
+      $alias_node_id: addProjectV2ItemById(input: {contentId: "$node_id", projectId: "$project_id"}) {
+        clientMutationId 
+        item {
+          content {
+            ... on Issue {
+              title
+            }
+            ... on PullRequest {
+              title
+            }
           }
         }
       }
-    }
 EOF
-)
+  )
+  done
+
+  result=$(gh api graphql -f query="mutation { $mutations }")
+
+
+  titles=$(echo "$result" | jq -r '.data | to_entries[] | .value.item.content.title')
+  number_of_titles=$(echo "$titles" | wc -l)
+  added=$((added+number_of_titles))
+
+  # every title is on a new line 
+  # print it surrounded with quotes and with "Added " prefixed
+  echo "$titles" | sed 's/^/"/' | sed 's/$/"/' | sed 's/^/Added /'
 done
-
-result=$(gh api graphql -f query="mutation { $mutations }")
-
-
-titles=$(echo "$result" | jq -r '.data | to_entries[] | .value.item.content.title')
-
-# every title is on a new line 
-# print it surrounded with quotes and with "Added " prefixed
-echo "$titles" | sed 's/^/"/' | sed 's/$/"/' | sed 's/^/Added /'
