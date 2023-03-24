@@ -3,9 +3,9 @@
 # if no agruments are provided, print usage
 if [ -z "$1" ]; then
   echo "Usage: add-to-project.sh <org_or_user>/<project_number> <search_query>"
-  echo "Example: add-to-project.sh cli/cli 1 is:open is:issue"
-  echo "Example: add-to-project.sh cli/cli 1 is:open is:pr"
-  echo "Restriction: can only add issues and pull requests to a project from the same organization or user"
+  echo "For url https://github.com/users/ekroon/projects/1, <org_or_user>/<project_number> is: ekroon/1"
+  echo "Example: add-to-project.sh ekroon/1 1 is:open is:issue"
+  echo "Example: add-to-project.sh ekroon/1 1 is:open is:pr"
 
   exit 1
 fi
