@@ -1,0 +1,36 @@
+name: Release add-to-project
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (must already exist)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: |
+          cp add-items-to-project.sh add-items-to-project
+          chmod +x add-to-project
+
+      - name: Create GitHub Release and upload script
+        uses: softprops/action-gh-release@v2
+        with:
+          files: add-items-to-project
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
