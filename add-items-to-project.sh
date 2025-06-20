@@ -2,10 +2,10 @@
 
 # if no agruments are provided, print usage
 if [ -z "$1" ]; then
-  echo "Usage: add-to-project.sh <org_or_user>/<project_number> <search_query>"
+  echo "Usage: $(basename "$0") <org_or_user>/<project_number> <search_query>"
   echo "For url https://github.com/users/ekroon/projects/1, <org_or_user>/<project_number> is: ekroon/1"
-  echo "Example: add-to-project.sh ekroon/1 1 is:open is:issue"
-  echo "Example: add-to-project.sh ekroon/1 1 is:open is:pr"
+  echo "Example: $(basename "$0") ekroon/1 1 is:open is:issue"
+  echo "Example: $(basename "$0") ekroon/1 1 is:open is:pr"
 
   exit 1
 fi
