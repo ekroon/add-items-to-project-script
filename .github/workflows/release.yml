@@ -24,7 +24,6 @@ jobs:
       - name: Make script executable
         run: |
           cp add-items-to-project.sh add-items-to-project
-          chmod +x add-to-project
 
       - name: Create GitHub Release and upload script
         uses: softprops/action-gh-release@v2
